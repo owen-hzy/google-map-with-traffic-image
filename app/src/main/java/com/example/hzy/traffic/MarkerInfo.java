@@ -12,13 +12,15 @@ public class MarkerInfo {
 
     private String key;
     private LatLng latLng;
-    private String description;
     private Bitmap image;
 
-    public MarkerInfo(String key, LatLng latLng, String description) {
+    public MarkerInfo(String key, LatLng latLng) {
         this.key = key;
         this.latLng = latLng;
-        this.description = description;
+    }
+
+    public String getKey() {
+        return key;
     }
 
     public String getUrl() {
@@ -31,14 +33,6 @@ public class MarkerInfo {
 
     public void setLatLng(LatLng latLng) {
         this.latLng = latLng;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public Bitmap getImage() {

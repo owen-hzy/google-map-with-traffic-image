@@ -6,7 +6,10 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.speech.tts.TextToSpeech;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -27,7 +30,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
     private TextToSpeech textToSpeech;
@@ -35,6 +38,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Handler handler;
     private Map<String, Marker> markerDictionary;
     private Map<String, MarkerInfo> markerInfos;
+    private Map<String, String> markerDescriptions;
+    private Map<String, String> chineseDescriptions;
+    private Map<String, String> englishDescriptions;
     private int[] marker_image_size = new int[] {300, 250};
 
     public MapsActivity() {
@@ -43,10 +49,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         markerDictionary = new HashMap<>();
 
         markerInfos = new HashMap<>();
+        chineseDescriptions = new HashMap<>();
+        englishDescriptions = new HashMap<>();
         // Add marker here
-        markerInfos.put("H201F", new MarkerInfo("H201F", new LatLng(22.277974, 114.168412), "Hennessy Road near Arsenal Street"));
-        markerInfos.put("ST703F", new MarkerInfo("ST703F", new LatLng(22.371, 114.1739), "Tai Po Road near MTR Racecourse Station"));
-        markerInfos.put("K101F", new MarkerInfo("K101F", new LatLng(22.294853, 114.172466), "Salisbury Road near Nathan Road"));
+        markerInfos.put("H201F", new MarkerInfo("H201F", new LatLng(22.277974, 114.168412)));
+        chineseDescriptions.put("H201F", "軒尼詩道近軍器廠街");
+        englishDescriptions.put("H201F", "Hennessy Road near Arsenal Street");
+
+        markerInfos.put("ST703F", new MarkerInfo("ST703F", new LatLng(22.371, 114.1739)));
+        chineseDescriptions.put("ST703F", "大埔公路近港鐵馬場站");
+        englishDescriptions.put("ST703F", "Tai Po Road near MTR Racecourse Station");
+
+        markerInfos.put("K101F", new MarkerInfo("K101F", new LatLng(22.294853, 114.172466)));
+        chineseDescriptions.put("K101F", "梳士巴利道近彌敦道");
+        englishDescriptions.put("K101F", "Salisbury Road near Nathan Road");
+
+        // Set default description to english
+        markerDescriptions = englishDescriptions;
     }
 
     @Override
@@ -57,6 +76,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
 
         // Create Android TextToSpeech Instance
         textToSpeech = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
@@ -72,6 +94,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         timer.schedule(createTimeTask(), 10000, 180000);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.english_voice:
+                textToSpeech.setLanguage(Locale.US);
+                markerDescriptions = englishDescriptions;
+                return true;
+            case R.id.chinese_voice:
+                textToSpeech.setLanguage(Locale.CHINA);
+                markerDescriptions = chineseDescriptions;
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 
     /**
      * Manipulates the map once available.
@@ -111,7 +154,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // add the marker
         for (Map.Entry<String, MarkerInfo> entry: markerInfos.entrySet()) {
             Marker marker = mMap.addMarker(new MarkerOptions().position(entry.getValue().getLatLng())
-                .title(entry.getValue().getDescription()).snippet(entry.getValue().getUrl()));
+                .title(entry.getValue().getKey()).snippet(entry.getValue().getUrl()));
             markerDictionary.put(entry.getKey(), marker);
             new ImageFetchTask(marker).execute(marker.getSnippet());
         }
@@ -127,7 +170,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public boolean onMarkerClick(Marker marker) {
                 new ImageFetchTask(marker).execute(marker.getSnippet());
-                textToSpeech.speak(marker.getTitle(), TextToSpeech.QUEUE_FLUSH, null, null);
+                textToSpeech.speak(markerDescriptions.get(marker.getTitle()), TextToSpeech.QUEUE_FLUSH, null, null);
                 return true;
             }
         });
