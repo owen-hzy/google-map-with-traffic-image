@@ -90,8 +90,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        // Update every 3 minutes
-        timer.schedule(createTimeTask(), 10000, 180000);
+        // Update every 3 minutes, and first time update after 3 minutes
+        timer.schedule(createTimeTask(), 180000, 180000);
     }
 
     @Override
@@ -155,8 +155,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         for (Map.Entry<String, MarkerInfo> entry: markerInfos.entrySet()) {
             Marker marker = mMap.addMarker(new MarkerOptions().position(entry.getValue().getLatLng())
                 .title(entry.getValue().getKey()).snippet(entry.getValue().getUrl()));
+            try {
+                String name = entry.getValue().getKey().toLowerCase();
+                int id = R.drawable.class.getField(name).getInt(null);
+                marker.setIcon(BitmapDescriptorFactory.fromBitmap(
+                        Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), id), marker_image_size[0], marker_image_size[1], false)));
+            } catch (IllegalAccessException | NoSuchFieldException e) {
+                // If can not read drawable, then update from the Internet
+                new ImageFetchTask(marker).execute(marker.getSnippet());
+            }
             markerDictionary.put(entry.getKey(), marker);
-            new ImageFetchTask(marker).execute(marker.getSnippet());
         }
 
         // Move Camera to Tai Po Road
